@@ -1,0 +1,12 @@
+dash
+dash_bootstrap_components
+plotly
+pandas
+dash-bootstrap-components
+dash-core-components
+dash-html-components
+gcsfs
+google-cloud-storage
+ipykernel 
+pyarrow
+matplotlib
