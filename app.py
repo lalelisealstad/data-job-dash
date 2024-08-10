@@ -1,27 +1,23 @@
 import dash
 from dash import dcc, html, Input, Output, State
-import pandas as pd
 import plotly.express as px
 import os
 from collections import Counter
-from datetime import datetime
-from datetime import date
+from datetime import date, timedelta
 import dash_bootstrap_components as dbc
+import polars as pl
+from google.cloud import storage
+import gcsfs
+from apps.modules import load_data, filter_df, make_tables, create_bar_chart, make_treemap
+import plotly.graph_objects as go
 
 global gdf
 global df
 
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"../service-account-details.json" 
+
 # Initialize the Dash app
 app = dash.Dash(__name__)
-
-
-# Load data
-def load_data():
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"../service-account-details.json" 
-    file_path_gcp = "gs://oslo-linkedin-dataengineer-jobs/transformed"
-    df = pd.read_parquet(file_path_gcp)
-    df = df.replace({'seniority': {None: 'Mid / not specified'}})
-    return df
 
 gdf = load_data()
 
@@ -29,32 +25,32 @@ gdf = load_data()
 app.layout = html.Div([
     html.Div([
         html.H1("Explore data jobs in London"),
-        html.H4("Interact with the filters below to see the skills needed for different data jobs."),
+        html.H4("Interact with the filters below to see the skills mentioned in job postings for data gurus"),
         html.Div([
-            html.Label("Filter job type "),
+            # html.Label("Filter job type "),
             dcc.Dropdown(id='filter1', options=[{'label': 'Data Analyst', 'value': 'Data Analyst'},
                                                 {'label': 'Data Engineer', 'value': 'Data Engineer'},
                                                 {'label': 'Data Scientist', 'value': 'Data Scientist'}],
                          multi=True, value=[], placeholder="Filter job type", clearable=False),
-        ], className='filter-div'),  # Add margin for spacing
+        ], className='filter-div'),  
 
         html.Div([
-            html.Label("Filter seniority "),
+            # html.Label("Filter seniority "),
             dcc.Dropdown(id='filter2', options=[{'label': 'Mid / not specified', 'value': 'Mid / not specified'},
                                                 {'label': 'Junior', 'value': 'Junior'},
                                                 {'label': 'Senior', 'value': 'Senior'},
                                                 {'label': 'Lead', 'value': 'Lead'},
                                                 {'label': 'Manager', 'value': 'Manager'}],
                          multi=True, value=[], placeholder="Filter seniority type", clearable=True),
-        ], className='filter-div'),  # Add margin for spacing
+        ], className='filter-div'),  
 
         html.Div([
-            html.Label("Filter skills  "),
+            # html.Label("Filter skills  "),
             dcc.Dropdown(id='filter4', placeholder='Filter skills', options=[], multi=True, clearable=True),
-        ], className='filter-div'),  # Add margin for spacing
+        ], className='filter-div'), 
 
         html.Div([
-            html.Label("Filter date posted   "),
+            # html.Label("Filter date posted   "),
             dcc.DatePickerRange(
                 id='filter3',
                 start_date=None,
@@ -62,20 +58,33 @@ app.layout = html.Div([
                 display_format='YYYY-MM-DD',
             ),
         ], className='custom-date-picker', style={'width': '100%'}),  # Add className for custom styling
-
+        
+        html.Div(
+            html.P(id ='text-output')
+        ), 
+        html.Div([
+            html.Div(
+                html.H5("This data is based on a sample of LinkedIn job postings with the search terms 'Data Scientist','Data Engineer' and 'Data Analyst' based in London, UK. The data collected using a custom web scraping pipeline I built. The pipeline is updated every evening with a sample of up to 75 job postings that were posted that day. For more information, see my GitHub repos for the dashboard and the datapipeline.", className='footer')
+            ), 
+            html.Div(
+                html.A("See my GitHub", href="https://github.com/lalelisealstad", target="_blank", className="footer")
+        )], style= { 'boxSizing': 'border-box','position': 'relative', 'margin-top': '200px' })
     ], style={'width': '25%', 'height': '100vh', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '20px', 'background-color': 'transparent', 'boxSizing': 'border-box'}),
     
     html.Div([
-        html.H2("Filtered Data Plot"),
+        html.H2("Percentage of job postings that mentiones skill(s)"),
+        html.Div(
+            html.P(id ='text-output_len_jobs', className= 'total_jobs')
+        ), 
         html.Div([
-            dcc.Graph(id='graph', style={'height': '500px', 'width': '100%'}),
-            dcc.Graph(id='graph_cloud', style={'height': '500px', 'width': '100%'}),
-            dcc.Graph(id='graph_job_type', style={'height': '500px', 'width': '100%', 'paddingRight': '20px'})  # Add right padding
-        ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+            dcc.Graph(id='graph', style={'height': '500px', 'width': '33%'}),
+            dcc.Graph(id='graph_cloud', style={'height': '500px', 'width': '33%'}),
+            dcc.Graph(id='graph_job_type', style={'height': '500px', 'width': '33%', 'paddingRight': '10px'})  # Add right padding
+        ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '0px'}),
         
-        dcc.Graph(id='graph4', style={'height': '700px', 'width': '100%'}),
-    ], style={'width': '75%', 'display': 'inline-block', 'padding': '20px', 'boxSizing': 'border-box'}),
-], style={'display': 'flex', 'background-color': '#110100'})
+        dcc.Graph(id='treemap', style={'height': '750px', 'width': '100%', 'marginTop': '0px'}),
+    ], style={'width': '75%', 'display': 'inline-block', 'padding': '10px', 'boxSizing': 'border-box'}),
+], style={ "transform-origin": "top left",  'background-color': 'black'})
 
 
 
@@ -88,15 +97,20 @@ app.layout = html.Div([
 )
 
 def set_dropdown_options(_):
-    if gdf.date.max().date() < date.today():
+    # function to make sure data is only loaded once
+    print(gdf.select(pl.col("date").max()).item().date())
+    print('todat', date.today())
+    yesterday = date.today() - timedelta(days=1)
+
+    # Check if the max date in the DataFrame is less than yesterday
+    if gdf.select(pl.col("date").max()).item().date() < yesterday:
         df = load_data()
-    else: 
+    else:
         df = gdf
-    
-    min_date = df['date'].min().date()
-    max_date = df['date'].max().date()
-    
-    skill_options = df.explode('skills')['skills'].tolist()
+
+    min_date = df.select(pl.col("date").min()).item().date()
+    max_date = df.select(pl.col("date").max()).item().date()
+    skill_options = df.select(pl.col("skills")).explode("skills").to_series().to_list()
     
     return min_date, max_date, skill_options
 
@@ -104,7 +118,10 @@ def set_dropdown_options(_):
 @app.callback(
     [Output('graph', 'figure'),
      Output('graph_cloud', 'figure'), 
-     Output('graph_job_type', 'figure')],
+     Output('graph_job_type', 'figure'), 
+     Output('treemap', 'figure'),
+     Output('text-output', 'children'),
+     Output('text-output_len_jobs', 'children'),],
     [Input('filter1', 'value'),
      Input('filter2', 'value'),
      Input('filter3', 'start_date'),
@@ -112,93 +129,58 @@ def set_dropdown_options(_):
      Input('filter4', 'value')]
 )
 def update_graph(filter1, filter2, start_date, end_date, filter4):
-    df = gdf
-    print(df)
-    
-    # Apply filters
-    if filter1:
-        print(filter1)
-        df = df[df['job_type'].isin(filter1)]
-        print('jobtype', df)
-    if filter2:
-        df = df[df['seniority'].isin(filter2)]
-        print('seniority', df)
-    if start_date and end_date:
-        start_date = pd.to_datetime(start_date)
-        end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1)
-        df['date'] = pd.to_datetime(df['date'])
-        print(start_date, end_date)
-        df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
-        print('date',df)
-    if filter4:
-        print(filter4)
-        df = df[df['skills'].map(lambda x: all(skill in x for skill in filter4))]
-        print('skill', df)
-    print('filtered', df)
-    # Define coding languages and cloud skills
-    coding_languages = [
-        'python', 'javascript', 'java', 'c++', 'c#', 'php', 'ruby', 'swift', 'kotlin', 'typescript',
-        'go', 'rust', 'sql', 'r', 'html', 'css', 'bash', 'perl', 'objective-c', 'scala',
-        'lua', 'haskell', 'matlab', 'dart', 'visual basic .net', 'assembly language', 'f#', 'groovy', 'elixir', 'clojure',
-        'erlang', 'julia', 'vbscript', 'lisp', 'prolog', 'scheme', 'ada', 'fortran', 'cobol', 'pascal',
-        'racket', 'scratch', 'tcl', 'smalltalk', 'actionscript', 'awk', 'ocaml', 'pl/sql', 'sas', 'logo'
-    ]
-    cloud_skills = {
-        'aws': 'amazon web services',
-        'gcp': 'google cloud platform',
-        'azure': 'microsoft azure',
-        'ibm': 'ibm cloud',
-        'oci': 'oracle cloud',
-        'sf': 'salesforce',
-        'sap': 'sap cloud',
-        'do': 'digitalocean'
-    }
 
-    job_type_share = (df.job_type.value_counts(normalize=True) * 100).astype(int)
-    # Explode the 'skills' column and calculate value counts\
-    skills_counts = pd.DataFrame(df.explode('skills')['skills'].value_counts())
-    
-    total_skills = len(df)
-    skills_counts['percent'] = ((skills_counts['count'] / total_skills) * 100).astype(int)
+    df = filter_df(gdf, filter1, filter2,start_date, end_date, filter4 )
 
-    # Filter coding languages and cloud skills
-    df_coding_languages = skills_counts[skills_counts.index.isin(coding_languages)].reset_index()
-    df_cloud_skills = skills_counts[skills_counts.index.isin(list(cloud_skills.values()) + list(cloud_skills.keys()))].reset_index()
-    print(df_coding_languages)
-    # print()
-    
-    
-    # Create the bar chart
-    fig = px.bar(df_coding_languages, x='skills', y='percent', title='Coding skills', labels={'index': 'Skills', 'percent': 'Percentage of job applications'})
-    fig.update_yaxes(range=[0, 100])
-    fig.update_layout(plot_bgcolor='#010103',
-                    showlegend=False,
-                    template='plotly_dark',
-                    paper_bgcolor='#010103',
-                    font=dict(
-                        family='Poppins, sans-serif',  # Apply Poppins font
-                        size=14,  # Set the default font size (adjust as needed)
-                        color='white'  # Set the font color
-                    )
-                  )
-    
-    fig2 = px.bar(df_cloud_skills, x='skills', y='percent', title='Desired experience with Cloud service provider', labels={'index': 'Skills', 'percent': 'Percentage of job applications'})
-    fig2.update_yaxes(range=[0, 100])
-    fig2.update_layout(plot_bgcolor='#010103',
-                    showlegend=False,
-                    template='plotly_dark',
-                    paper_bgcolor='#010103',
-                    font=dict(
-                        family='Poppins, sans-serif',  # Apply Poppins font
-                        size=14,  # Set the default font size (adjust as needed)
-                        color='white'  # Set the font color
-                    )
-                  )
-    
-    fig3 = px.bar(job_type_share.reset_index(), x='job_type', y='proportion', title='Coding skills', labels={'skills': 'Skills', 'percent': 'Percentage of job applications'})
-    fig3.update_yaxes(range=[0, 100])
+    if len(df) < 1: 
+        filter_warning = 'No job postings with the selected filters!'
+        empty_fig = go.Figure()  # Creates an empty figure
+        return empty_fig, empty_fig, empty_fig, empty_fig, filter_warning, ''
+    else: 
+        job_type_share, df_coding_languages, df_cloud_skills, skills_counts = make_tables(df)    
+        
+        total_jobs_text = f"Out of {len(df)} job postings in the selected date interval"
+        filter_warning = ''
+        print( job_type_share)
+        # Create bar chart for coding languages
+        if len(df_coding_languages) > 0: 
+            fig_code = create_bar_chart(
+                x=df_coding_languages['skills'],
+                y=df_coding_languages['percentage'],
+                title='Coding language',
+            )
+        else: 
+            df_coding_languages = go.Figure()
+            filter_warning = 'no coding languages in job postings with the selected filters!'
 
-    return fig, fig2, fig3
+        # Create fig for cloud provider
+        if len(df_cloud_skills) > 0: 
+            fig_cloud = create_bar_chart(
+                x=df_cloud_skills['skills'],
+                y=df_cloud_skills['percentage'],
+                title='Cloud service provider experience',
+            )
+        else: 
+            fig_cloud = go.Figure()
+            filter_warning = 'no cloud providers in job postings with the selected filters!'
+
+
+        # Create bar chart for job type
+        if len(job_type_share) > 0: 
+            fig_job_type = create_bar_chart(
+                x=job_type_share['job_type'],
+                y=job_type_share['percentage'],
+                title='Job type',
+                x_label='job type',
+            )
+        else: 
+            fig_job_type = go.Figure()
+            filter_warning = 'job types in job postings with the selected filters!'
+
+        # tree map of all skills
+        treemap = make_treemap(skills_counts)
+
+        return fig_code, fig_cloud, fig_job_type, treemap, filter_warning, total_jobs_text
 
 if __name__ == '__main__':
     app.run_server(debug=True)
