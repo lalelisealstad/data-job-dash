@@ -6,12 +6,14 @@ import os
 from collections import Counter
 from datetime import datetime
 from datetime import date
+import dash_bootstrap_components as dbc
 
 global gdf
 global df
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
+
 
 # Load data
 def load_data():
@@ -27,27 +29,40 @@ gdf = load_data()
 app.layout = html.Div([
     html.Div([
         html.H2("Filters"),
-        html.Label("Filter 1"),
-        dcc.Dropdown(id='filter1', options=[{'label': 'Data Analyst', 'value': 'Data Analyst'},
-                                            {'label': 'Data Engineer', 'value': 'Data Engineer'},
-                                            {'label': 'Data Scientist', 'value': 'Data Scientist'}],
-                     multi=True, value=[], placeholder="Filter job type", clearable=False),
-        html.Label("Filter 2"),
-        dcc.Dropdown(id='filter2', options=[{'label': 'Mid / not specified', 'value': 'Mid / not specified'},
-                                            {'label': 'Junior', 'value': 'Junior'},
-                                            {'label': 'Senior', 'value': 'Senior'},
-                                            {'label': 'Lead', 'value': 'Lead'},
-                                            {'label': 'Manager', 'value': 'Manager'}],
-                     multi=True, value=[], placeholder="Filter seniority type", clearable=True),
-        html.Label("Filter 4"),
-        dcc.Dropdown(id='filter4', placeholder = 'Filter skills', options=[], multi=True, clearable=True),
-        html.Label("Filter 3"),
-        dcc.DatePickerRange(
-            id='filter3',
-            start_date=None,
-            end_date=None,
-            display_format='YYYY-MM-DD',
-        ),
+
+        html.Div([
+            html.Label("Filter job type "),
+            dcc.Dropdown(id='filter1', options=[{'label': 'Data Analyst', 'value': 'Data Analyst'},
+                                                {'label': 'Data Engineer', 'value': 'Data Engineer'},
+                                                {'label': 'Data Scientist', 'value': 'Data Scientist'}],
+                         multi=True, value=[], placeholder="Filter job type", clearable=False),
+        ], className='filter-div'),  # Add className for custom styling
+
+        html.Div([
+            html.Label("Filter seniority "),
+            dcc.Dropdown(id='filter2', options=[{'label': 'Mid / not specified', 'value': 'Mid / not specified'},
+                                                {'label': 'Junior', 'value': 'Junior'},
+                                                {'label': 'Senior', 'value': 'Senior'},
+                                                {'label': 'Lead', 'value': 'Lead'},
+                                                {'label': 'Manager', 'value': 'Manager'}],
+                         multi=True, value=[], placeholder="Filter seniority type", clearable=True),
+        ], className='filter-div'),  # Add className for custom styling
+
+        html.Div([
+            html.Label("Filter skills  "),
+            dcc.Dropdown(id='filter4', placeholder='Filter skills', options=[], multi=True, clearable=True),
+        ], className='filter-div'),  # Add className for custom styling
+
+        html.Div([
+            html.Label("Filter date posted   "),
+            dcc.DatePickerRange(
+                id='filter3',
+                start_date=None,
+                end_date=None,
+                display_format='YYYY-MM-DD',
+            ),
+        ], className='custom-date-picker', style={'width': '100%'}),  # Add className for custom styling
+
     ], style={'width': '20%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '20px', 'backgroundColor': '#f4f4f4'}),
     
     html.Div([
@@ -55,6 +70,7 @@ app.layout = html.Div([
         dcc.Graph(id='graph')
     ], style={'width': '75%', 'display': 'inline-block', 'padding': '20px'}),
 ])
+
 
 # Callback to populate the date picker and dropdowns with unique values
 @app.callback(

@@ -10,3 +10,4 @@ google-cloud-storage
 ipykernel 
 pyarrow
 matplotlib
+dash_bootstrap_templates

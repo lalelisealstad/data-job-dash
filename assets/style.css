@@ -1,0 +1,74 @@
+.filter-div {
+    margin-bottom: 20px;
+}
+
+.filter-div label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.filter-div .Select {
+    width: 100%;
+}
+
+
+/* Custom styling for the DatePickerRange component */
+/* style.css in the assets directory */
+/* style.css in the assets directory */
+
+/* Container styling to center the DatePickerRange and make it wider */
+.date-picker-container {
+    padding: 5px;
+    width: 100%; /* Ensure the container is wide */
+    margin: 0 auto;  /* Center the container */
+    font-weight: bold;
+}
+
+/* Custom styling for the label */
+.date-picker-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    text-align: center;  /* Center the label text */
+    font-size: 18px;  /* Even smaller font size */
+    text-align: center;  /* Center the label text */
+}
+
+/* Custom styling for the label */
+.custom-date-picker label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 16px;  /* Even smaller font size */
+}
+
+
+/* Custom styling for the DatePickerRange component */
+.custom-date-picker .DateRangePickerInput {
+    border-radius: 5px;
+    padding: 5px;
+    height: 32px;  /* Reduced height for the input box */
+    font-weight: bold;
+    font-size: 20px;  /* Even smaller font size */
+    width: 145%; /* Ensure it takes full width within its container */
+    align-items: center;  /* Vertically center the text */
+}
+
+/* Ensure the individual date inputs have reduced padding/margins */
+.custom-date-picker .DateInput {
+    margin: 0 5px;
+    padding: 2px 6px;
+    font-weight: bold;
+    font-size: 20px;  /* Even smaller font size */
+    align-items: center;  /* Vertically center the text */
+}
+
+/* Custom styling for the displayed date values THIS IS FOR PRE SELECT VALUES*/
+
+.custom-date-picker .DateInput_input {
+    font-size: 20px;  /* Even smaller font size for the displayed date values */
+    line-height: 1.0;  /* Further reduce line height to make text more compact */
+    padding: 3px 3px;  /* Smaller padding inside the date input */
+    align-items: center;  /* Vertically center the text */
+}

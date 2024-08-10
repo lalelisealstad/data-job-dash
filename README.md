@@ -28,8 +28,6 @@ $ python "main.py"
 
 ## Develop
 - error message to use if there is no filter
-- 
-- make date range picker nicer
 - update layout
 - add wordcloud and make it match style 
 - add other figures
