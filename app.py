@@ -39,15 +39,15 @@ app.layout = html.Div([
                                             {'label': 'Lead', 'value': 'Lead'},
                                             {'label': 'Manager', 'value': 'Manager'}],
                      multi=True, value=[], placeholder="Filter seniority type", clearable=True),
-         html.Label("Filter 3"),
+        html.Label("Filter 4"),
+        dcc.Dropdown(id='filter4', placeholder = 'Filter skills', options=[], multi=True, clearable=True),
+        html.Label("Filter 3"),
         dcc.DatePickerRange(
             id='filter3',
             start_date=None,
             end_date=None,
             display_format='YYYY-MM-DD',
         ),
-        html.Label("Filter 4"),
-        dcc.Dropdown(id='filter4', options=[], multi=False),
     ], style={'width': '20%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '20px', 'backgroundColor': '#f4f4f4'}),
     
     html.Div([
@@ -88,19 +88,28 @@ def set_dropdown_options(_):
 )
 def update_graph(filter1, filter2, start_date, end_date, filter4):
     df = gdf
+    print(df)
     
     # Apply filters
     if filter1:
+        print(filter1)
         df = df[df['job_type'].isin(filter1)]
+        print('jobtype', df)
     if filter2:
         df = df[df['seniority'].isin(filter2)]
+        print('seniority', df)
     if start_date and end_date:
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date) + pd.Timedelta(days=1)
+        df['date'] = pd.to_datetime(df['date'])
+        print(start_date, end_date)
         df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
+        print('date',df)
     if filter4:
         print(filter4)
-        df = df[df['skills'].map(lambda x: filter4 in x)]
-        print(df)
-    
+        df = df[df['skills'].map(lambda x: all(skill in x for skill in filter4))]
+        print('skill', df)
+    print('filtered', df)
     # Define coding languages and cloud skills
     coding_languages = [
         'python', 'javascript', 'java', 'c++', 'c#', 'php', 'ruby', 'swift', 'kotlin', 'typescript',
@@ -130,7 +139,7 @@ def update_graph(filter1, filter2, start_date, end_date, filter4):
     # Filter coding languages and cloud skills
     df_coding_languages = skills_counts[skills_counts.index.isin(coding_languages)].reset_index()
     df_cloud_skills = skills_counts[skills_counts.index.isin(list(cloud_skills.values()) + list(cloud_skills.keys()))]
-
+    print(df_coding_languages)
     # Create the bar chart
     fig = px.bar(df_coding_languages, x='skills', y='percent', title='Coding skills', labels={'index': 'Skills', 'percent': 'Percentage of job applications'})
     fig.update_yaxes(range=[0, 100])
