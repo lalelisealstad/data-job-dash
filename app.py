@@ -28,15 +28,15 @@ gdf = load_data()
 # Define the layout of the app
 app.layout = html.Div([
     html.Div([
-        html.H2("Filters"),
-
+        html.H1("Explore data jobs in London"),
+        html.H4("Interact with the filters below to see the skills needed for different data jobs."),
         html.Div([
             html.Label("Filter job type "),
             dcc.Dropdown(id='filter1', options=[{'label': 'Data Analyst', 'value': 'Data Analyst'},
                                                 {'label': 'Data Engineer', 'value': 'Data Engineer'},
                                                 {'label': 'Data Scientist', 'value': 'Data Scientist'}],
                          multi=True, value=[], placeholder="Filter job type", clearable=False),
-        ], className='filter-div'),  # Add className for custom styling
+        ], className='filter-div'),  # Add margin for spacing
 
         html.Div([
             html.Label("Filter seniority "),
@@ -46,12 +46,12 @@ app.layout = html.Div([
                                                 {'label': 'Lead', 'value': 'Lead'},
                                                 {'label': 'Manager', 'value': 'Manager'}],
                          multi=True, value=[], placeholder="Filter seniority type", clearable=True),
-        ], className='filter-div'),  # Add className for custom styling
+        ], className='filter-div'),  # Add margin for spacing
 
         html.Div([
             html.Label("Filter skills  "),
             dcc.Dropdown(id='filter4', placeholder='Filter skills', options=[], multi=True, clearable=True),
-        ], className='filter-div'),  # Add className for custom styling
+        ], className='filter-div'),  # Add margin for spacing
 
         html.Div([
             html.Label("Filter date posted   "),
@@ -63,13 +63,20 @@ app.layout = html.Div([
             ),
         ], className='custom-date-picker', style={'width': '100%'}),  # Add className for custom styling
 
-    ], style={'width': '20%', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '20px', 'backgroundColor': '#f4f4f4'}),
+    ], style={'width': '25%', 'height': '100vh', 'display': 'inline-block', 'verticalAlign': 'top', 'padding': '20px', 'background-color': 'transparent', 'boxSizing': 'border-box'}),
     
     html.Div([
         html.H2("Filtered Data Plot"),
-        dcc.Graph(id='graph')
-    ], style={'width': '75%', 'display': 'inline-block', 'padding': '20px'}),
-])
+        html.Div([
+            dcc.Graph(id='graph', style={'height': '500px', 'width': '100%'}),
+            dcc.Graph(id='graph_cloud', style={'height': '500px', 'width': '100%'}),
+            dcc.Graph(id='graph_job_type', style={'height': '500px', 'width': '100%', 'paddingRight': '20px'})  # Add right padding
+        ], style={'display': 'flex', 'justifyContent': 'space-between', 'marginBottom': '30px'}),
+        
+        dcc.Graph(id='graph4', style={'height': '700px', 'width': '100%'}),
+    ], style={'width': '75%', 'display': 'inline-block', 'padding': '20px', 'boxSizing': 'border-box'}),
+], style={'display': 'flex', 'background-color': '#110100'})
+
 
 
 # Callback to populate the date picker and dropdowns with unique values
@@ -94,8 +101,10 @@ def set_dropdown_options(_):
     return min_date, max_date, skill_options
 
 # Callback to update the graph based on selected filters
-@app.callback( 
-    Output('graph', 'figure'),
+@app.callback(
+    [Output('graph', 'figure'),
+     Output('graph_cloud', 'figure'), 
+     Output('graph_job_type', 'figure')],
     [Input('filter1', 'value'),
      Input('filter2', 'value'),
      Input('filter3', 'start_date'),
@@ -154,13 +163,42 @@ def update_graph(filter1, filter2, start_date, end_date, filter4):
 
     # Filter coding languages and cloud skills
     df_coding_languages = skills_counts[skills_counts.index.isin(coding_languages)].reset_index()
-    df_cloud_skills = skills_counts[skills_counts.index.isin(list(cloud_skills.values()) + list(cloud_skills.keys()))]
+    df_cloud_skills = skills_counts[skills_counts.index.isin(list(cloud_skills.values()) + list(cloud_skills.keys()))].reset_index()
     print(df_coding_languages)
+    # print()
+    
+    
     # Create the bar chart
     fig = px.bar(df_coding_languages, x='skills', y='percent', title='Coding skills', labels={'index': 'Skills', 'percent': 'Percentage of job applications'})
     fig.update_yaxes(range=[0, 100])
+    fig.update_layout(plot_bgcolor='#010103',
+                    showlegend=False,
+                    template='plotly_dark',
+                    paper_bgcolor='#010103',
+                    font=dict(
+                        family='Poppins, sans-serif',  # Apply Poppins font
+                        size=14,  # Set the default font size (adjust as needed)
+                        color='white'  # Set the font color
+                    )
+                  )
+    
+    fig2 = px.bar(df_cloud_skills, x='skills', y='percent', title='Desired experience with Cloud service provider', labels={'index': 'Skills', 'percent': 'Percentage of job applications'})
+    fig2.update_yaxes(range=[0, 100])
+    fig2.update_layout(plot_bgcolor='#010103',
+                    showlegend=False,
+                    template='plotly_dark',
+                    paper_bgcolor='#010103',
+                    font=dict(
+                        family='Poppins, sans-serif',  # Apply Poppins font
+                        size=14,  # Set the default font size (adjust as needed)
+                        color='white'  # Set the font color
+                    )
+                  )
+    
+    fig3 = px.bar(job_type_share.reset_index(), x='job_type', y='proportion', title='Coding skills', labels={'skills': 'Skills', 'percent': 'Percentage of job applications'})
+    fig3.update_yaxes(range=[0, 100])
 
-    return fig
+    return fig, fig2, fig3
 
 if __name__ == '__main__':
     app.run_server(debug=True)

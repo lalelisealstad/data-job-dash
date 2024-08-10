@@ -26,9 +26,13 @@ $ python "main.py"
 ```
 
 
-## Develop
+### Develop to-do: 
 - error message to use if there is no filter
 - update layout
 - add wordcloud and make it match style 
 - add other figures
 - 
+
+### Develop improvements: 
+- split filters into seperate callbacks and store data in dcc for faster callbacks filters
+- clientside callbacks for faster. 
