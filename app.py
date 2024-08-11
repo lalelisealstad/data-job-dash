@@ -129,64 +129,71 @@ def set_dropdown_options(_):
      Input('filter3', 'end_date'),
      Input('filter4', 'value')]
 )
+
+
 def update_graph(filter1, filter2, start_date, end_date, filter4):
 
-    # filter global dataframe 
-    df = filter_df(gdf, filter1, filter2,start_date, end_date, filter4 )
-
-    # if filtered df has no rows, return filter warning and empty figures
-    if len(df) < 1: 
+    # Check that global filter have not been filtered too much 
+    if len(gdf) < 1: 
         filter_warning = 'No job postings with the selected filters!'
         return empty_fig(), empty_fig(), empty_fig(), empty_fig(), filter_warning, ''
     else: 
-        job_type_share, df_coding_languages, df_cloud_skills, skills_counts = make_tables(df)    
-        
-        total_jobs_text = f"Out of {len(df)} job postings in the selected date interval"
-        filter_warning = ''
+        # filter global dataframe 
+        df = filter_df(gdf, filter1, filter2,start_date, end_date, filter4)
 
-        # Create bar chart for coding languages
-        if len(df_coding_languages) > 0: 
-            fig_code = create_bar_chart(
-                x=df_coding_languages['skills'],
-                y=df_coding_languages['percentage'],
-                title='Coding language',
-            )
+        # if filtered df has no rows, return filter warning and empty figures
+        if len(df) < 1: 
+            filter_warning = 'No job postings with the selected filters!'
+            return empty_fig(), empty_fig(), empty_fig(), empty_fig(), filter_warning, ''
         else: 
-            fig_code = empty_fig()
-            filter_warning = 'There are no coding languages in job postings with the selected filters!'
+            job_type_share, df_coding_languages, df_cloud_skills, skills_counts = make_tables(df)    
+            
+            total_jobs_text = f"Out of {len(df)} job postings in the selected date interval"
+            filter_warning = ''
 
-        # Create fig for cloud provider
-        if len(df_cloud_skills) > 0: 
-            fig_cloud = create_bar_chart(
-                x=df_cloud_skills['skills'],
-                y=df_cloud_skills['percentage'],
-                title='Cloud service provider experience',
-            )
-        else: 
-            fig_cloud = empty_fig()
-            filter_warning = 'There are no cloud providers in job postings with the selected filters!'
+            # Create bar chart for coding languages
+            if len(df_coding_languages) > 0: 
+                fig_code = create_bar_chart(
+                    x=df_coding_languages['skills'],
+                    y=df_coding_languages['percentage'],
+                    title='Coding language',
+                )
+            else: 
+                fig_code = empty_fig('Coding language')
+                filter_warning = 'There are no coding languages in job postings with the selected filters!'
+
+            # Create fig for cloud provider
+            if len(df_cloud_skills) > 0: 
+                fig_cloud = create_bar_chart(
+                    x=df_cloud_skills['skills'],
+                    y=df_cloud_skills['percentage'],
+                    title='Cloud service provider experience',
+                )
+            else: 
+                fig_cloud = empty_fig('Cloud service provider')
+                filter_warning = 'There are no cloud providers in job postings with the selected filters!'
 
 
-        # Create bar chart for job type
-        if len(job_type_share) > 0: 
-            fig_job_type = create_bar_chart(
-                x=job_type_share['job_type'],
-                y=job_type_share['percentage'],
-                title='Job type',
-                x_label='job type',
-            )
-        else: 
-            fig_job_type = empty_fig()
-            filter_warning = 'There are no job types in job postings with the selected filters!'
+            # Create bar chart for job type
+            if len(job_type_share) > 0: 
+                fig_job_type = create_bar_chart(
+                    x=job_type_share['job_type'],
+                    y=job_type_share['percentage'],
+                    title='Job type',
+                    x_label='job type',
+                )
+            else: 
+                fig_job_type = empty_fig('job type')
+                filter_warning = 'There are no job types in job postings with the selected filters!'
 
-        # tree map of all skills
-        if len(skills_counts) > 0: 
-            treemap = make_treemap(skills_counts)
-        else: 
-            treemap = empty_fig()
-            filter_warning = 'There are no job postings with the selected filters!'
+            # tree map of all skills
+            if len(skills_counts) > 0: 
+                treemap = make_treemap(skills_counts)
+            else: 
+                treemap = empty_fig('skills')
+                filter_warning = 'There are no job postings with the selected filters!'
 
-        return fig_code, fig_cloud, fig_job_type, treemap, filter_warning, total_jobs_text
+            return fig_code, fig_cloud, fig_job_type, treemap, filter_warning, total_jobs_text
 
 if __name__ == '__main__':
     app.run_server(debug=True)

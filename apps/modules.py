@@ -174,7 +174,7 @@ def make_treemap(skills_counts):
 
 
 import plotly.graph_objects as go
-def empty_fig(): 
+def empty_fig(ptitle = ''): 
     
     fig = go.Figure()
     fig.update_xaxes(visible=False)
@@ -191,7 +191,7 @@ def empty_fig():
             color='white'   
         ), 
         title={
-            'text': f"There are no skills with the selected filters!",
+            'text': f"There are no {ptitle} with the selected filters!",
             'font': dict(
                 family='Poppins',
                 size=16,

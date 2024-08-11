@@ -17,12 +17,12 @@ $ pip install -r requirements.txt
 Run the program after installation:
 ```
 $ source .venv/bin/activate
-$ python "main.py"
+$ python "app.py"
 ```
 
 
 ### Develop to-do: 
-- deploy to gcp cloud run 
+- deploy to gcp cloud run using github actions
 - readme description of deployment
 
 ### Develop improvements: 
