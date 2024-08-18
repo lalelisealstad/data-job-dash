@@ -12,9 +12,9 @@ from apps.modules import load_data, filter_df, make_tables, create_bar_chart, ma
 import plotly.graph_objects as go
 
 global gdf
-global df
 
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"../service-account-details.json" 
+if 'VSCODE_PID' in os.environ:
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r"service-account-details.json" 
 
 # Initialize the Dash app
 app = dash.Dash(__name__)
@@ -63,7 +63,10 @@ app.layout = html.Div([
         
         html.Div([
             html.Div(
-                html.H5("This data is based on a sample of LinkedIn data-related job postings with the search terms 'Data Scientist','Data Engineer' and 'Data Analyst' based in London, UK. The data collected using a custom web scraping pipeline I built. The pipeline is updated every evening with a sample of up to 75 job postings that were posted that day. For more information, see my GitHub repos for the dashboard and the datapipeline.", className='footer')
+                html.H5("""This data is based on a sample of LinkedIn data-related job postings with the search terms 'Data Scientist', 'Data Engineer' or 'Data Analyst' based in London, UK. 
+                        The data is collected using a pipeline that scrapes job descriptions from LinkedIn and then uses spaCy to identify skill-related words. 
+                        The data is updated daily with a sample of up to new 75 job postings that were posted that day. 
+                        For more information, see my GitHub for the dashboard and the datapipeline repositories.""", className='footer')
             ), 
             html.Div(
                 html.A("See my GitHub", href="https://github.com/lalelisealstad", target="_blank", className="footer")
@@ -196,4 +199,4 @@ def update_graph(filter1, filter2, start_date, end_date, filter4):
             return fig_code, fig_cloud, fig_job_type, treemap, filter_warning, total_jobs_text
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host="0.0.0.0", port=8080)

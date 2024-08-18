@@ -14,11 +14,19 @@ $ source .venv/bin/activate
 $ pip install -r requirements.txt
 ```
 
-Run the program after installation:
+Run the program locally after installation:
 ```
 $ source .venv/bin/activate
 $ python "app.py"
 ```
+
+Deploy locally with docker: 
+```
+$ docker build -t job-dash .
+$ docker run -p 8080:8080 job-dash
+
+Cloud deployment: 
+Using github actions, deployment specified in cloudrun.yml file
 
 
 ### Develop to-do: 

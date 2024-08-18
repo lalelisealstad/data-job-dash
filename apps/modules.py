@@ -87,6 +87,7 @@ def make_tables(df):
 
 # make standard figure matching dashboard style
 import plotly.express as px
+
 def create_bar_chart(x, y, title, x_label='skill(s)'):
     fig = px.bar(x=x, y=y, title=title)
     fig.update_yaxes(range=[0, 100])
@@ -118,7 +119,7 @@ def create_bar_chart(x, y, title, x_label='skill(s)'):
     fig.update_traces(marker_color='#08519c', marker_line_color='#f7fbff',
                       marker_line_width=1.5, opacity=0.8,
                       hovertemplate='<span style="font-family:Poppins; font-size:20px;"><b>Skill:</b> %{x}<br><b>Percentage:</b> %{y}%</span>')
-    
+
     return fig
 
 # blue colors same as treemap
@@ -137,6 +138,7 @@ import plotly.express as px
 
 def make_treemap(skills_counts):
     
+    skills_counts = skills_counts.filter(pl.col('percentage') > 1)
     skills_counts_dict = {
         "skills": skills_counts["skills"].to_list(),
         "percentage": skills_counts["percentage"].to_list()
