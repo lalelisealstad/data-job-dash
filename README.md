@@ -24,6 +24,7 @@ Deploy locally with docker:
 ```
 $ docker build -t job-dash .
 $ docker run -p 8080:8080 job-dash
+```
 
 Cloud deployment: 
 Using github actions, deployment specified in cloudrun.yml file
